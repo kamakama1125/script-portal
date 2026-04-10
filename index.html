@@ -112,9 +112,29 @@
   .copy-btn.copied { background: #16a34a; }
 
   /* welcome */
-  .welcome { text-align: center; padding: 100px 20px; color: #94a3b8; }
+  .welcome { text-align: center; padding: 60px 20px; color: #94a3b8; }
   .welcome h2 { font-size: 24px; margin-bottom: 12px; color: #64748b; }
   .welcome p { font-size: 14px; }
+
+  .share-section { margin-top: 40px; text-align: left; max-width: 480px; margin-left: auto; margin-right: auto; }
+  .share-section h3 { font-size: 14px; color: #64748b; font-weight: 700; margin-bottom: 16px; letter-spacing: 1px; }
+  .share-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+    padding: 16px 20px; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .share-card .client-info { display: flex; align-items: center; gap: 10px; }
+  .share-card .client-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .share-card .client-icon.komano { background: #ede9fe; }
+  .share-card .client-icon.baran { background: #fce7f3; }
+  .share-card .client-label { font-size: 14px; font-weight: 700; color: #1e293b; }
+  .share-btn {
+    background: #8b5cf6; color: #fff; border: none;
+    padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 700;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all 0.15s;
+  }
+  .share-btn:hover { background: #7c3aed; }
+  .share-btn.copied { background: #16a34a; }
 </style>
 </head>
 <body>
@@ -149,6 +169,24 @@
   <div class="welcome" id="welcome">
     <h2>台本ポータル</h2>
     <p>左のサイドバーからクライアント・台本を選んでください</p>
+
+    <div class="share-section" id="share-section">
+      <h3>クライアントに共有</h3>
+      <div class="share-card">
+        <div class="client-info">
+          <div class="client-icon komano">🐾</div>
+          <div class="client-label">狛乃ひなた</div>
+        </div>
+        <button class="share-btn" onclick="shareLink('komano', this)">URLをコピー</button>
+      </div>
+      <div class="share-card">
+        <div class="client-info">
+          <div class="client-icon baran">🍓</div>
+          <div class="client-label">白苺のばらん</div>
+        </div>
+        <button class="share-btn" onclick="shareLink('baran', this)">URLをコピー</button>
+      </div>
+    </div>
   </div>
 
   <!-- ===== 狛乃 #1 ===== -->
@@ -520,8 +558,9 @@ if (clientFilter) {
       g.querySelector('.script-list').classList.add('open');
     }
   });
-  // hide sidebar title or adjust
   document.querySelector('.sidebar-title').textContent = '台本一覧';
+  const shareSection = document.getElementById('share-section');
+  if (shareSection) shareSection.style.display = 'none';
 }
 
 function toggleClient(el) {
@@ -551,6 +590,16 @@ function copyVrew(btn, textId) {
     btn.textContent = 'コピーしました！';
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function shareLink(client, btn) {
+  const base = window.location.origin + window.location.pathname;
+  const url = base + '?client=' + client;
+  navigator.clipboard.writeText(url).then(() => {
+    btn.textContent = 'コピーしました！';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'URLをコピー'; btn.classList.remove('copied'); }, 2000);
   });
 }
 
