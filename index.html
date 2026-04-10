@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>台本ポータル</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f8fafc; font-family: 'Noto Sans JP', sans-serif; color: #1e293b; }
+
+  /* sidebar */
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
+    background: #1e293b; color: #e2e8f0; padding: 20px 0; overflow-y: auto; z-index: 50;
+  }
+  .sidebar-title { font-size: 18px; font-weight: 900; padding: 0 20px 16px; color: #fff; border-bottom: 1px solid #334155; margin-bottom: 12px; }
+  .client-group { margin-bottom: 8px; }
+  .client-name {
+    font-size: 13px; font-weight: 700; color: #94a3b8; letter-spacing: 1px;
+    padding: 8px 20px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  }
+  .client-name:hover { color: #c084fc; }
+  .client-name .arrow { transition: transform 0.2s; font-size: 10px; }
+  .client-name.open .arrow { transform: rotate(90deg); }
+  .script-list { display: none; }
+  .script-list.open { display: block; }
+  .script-item {
+    padding: 8px 20px 8px 36px; font-size: 13px; cursor: pointer;
+    color: #94a3b8; transition: all 0.15s;
+  }
+  .script-item:hover { background: #334155; color: #fff; }
+  .script-item.active { background: #8b5cf6; color: #fff; }
+
+  /* main */
+  .main { margin-left: 260px; padding: 30px 40px; }
+
+  /* script view */
+  .script-view { display: none; }
+  .script-view.active { display: block; }
+
+  .script-header {
+    background: linear-gradient(135deg, #8b5cf6, #c084fc);
+    border-radius: 20px; padding: 28px 32px; color: #fff; margin-bottom: 20px;
+  }
+  .script-header h1 { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+  .script-header .client-tag { font-size: 12px; background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 8px; display: inline-block; margin-bottom: 8px; }
+  .script-header .desc { font-size: 13px; opacity: 0.85; line-height: 1.6; }
+
+  /* tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: #e2e8f0; border-radius: 12px; padding: 4px; }
+  .tab {
+    flex: 1; text-align: center; padding: 10px; border-radius: 10px; font-size: 13px;
+    font-weight: 700; cursor: pointer; color: #64748b; transition: all 0.15s;
+  }
+  .tab.active { background: #fff; color: #8b5cf6; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .tab:hover:not(.active) { color: #1e293b; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* script body */
+  .section {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .section-header {
+    padding: 12px 20px; font-size: 13px; font-weight: 700; letter-spacing: 1px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-header .time { background: #f1f5f9; color: #64748b; padding: 3px 8px; border-radius: 6px; font-size: 11px; }
+  .hook .section-header { background: #fef2f2; color: #dc2626; }
+  .main-section .section-header { background: #f0fdf4; color: #16a34a; }
+  .cta-section .section-header { background: #eff6ff; color: #2563eb; }
+  .comment-section .section-header { background: #faf5ff; color: #7c3aed; }
+  .section-body { padding: 14px 20px; }
+  .direction { color: #94a3b8; font-size: 12px; font-style: italic; display: block; margin-bottom: 2px; }
+  .serif { font-size: 15px; font-weight: 700; line-height: 1.8; }
+  .line { margin-bottom: 10px; }
+  .self-tsukkomi { background: #fefce8; border-left: 3px solid #eab308; padding: 3px 10px; border-radius: 0 8px 8px 0; display: inline-block; }
+
+  .comment-preview {
+    background: #1e293b; color: #e2e8f0; border-radius: 12px;
+    padding: 14px 18px; font-size: 13px; line-height: 1.8; white-space: pre-wrap;
+  }
+  .comment-preview .name { font-weight: 700; color: #c084fc; display: block; margin-bottom: 6px; }
+  .pin-badge { background: #7c3aed; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 5px; margin-left: 6px; }
+
+  .titles, .notes { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+  .titles h3, .notes h3 { font-size: 12px; color: #94a3b8; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; }
+  .title-option { padding: 8px 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
+  .title-num { color: #c084fc; margin-right: 6px; }
+  .note-item { font-size: 13px; line-height: 1.7; padding-left: 14px; position: relative; margin-bottom: 4px; }
+  .note-item::before { content: '•'; position: absolute; left: 0; color: #c084fc; font-weight: 900; }
+
+  /* vrew copy */
+  .vrew-box {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+    padding: 18px; margin-bottom: 16px;
+  }
+  .vrew-box h3 { font-size: 12px; color: #94a3b8; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .vrew-text {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 14px 16px; font-size: 14px; line-height: 1.8; white-space: pre-wrap;
+    font-family: 'Noto Sans JP', sans-serif; color: #334155; min-height: 60px;
+  }
+  .copy-btn {
+    margin-top: 10px; background: #8b5cf6; color: #fff; border: none;
+    padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all 0.15s;
+  }
+  .copy-btn:hover { background: #7c3aed; }
+  .copy-btn.copied { background: #16a34a; }
+
+  /* welcome */
+  .welcome { text-align: center; padding: 100px 20px; color: #94a3b8; }
+  .welcome h2 { font-size: 24px; margin-bottom: 12px; color: #64748b; }
+  .welcome p { font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-title">台本ポータル</div>
+
+  <div class="client-group" data-client="komano">
+    <div class="client-name open" onclick="toggleClient(this)">
+      <span class="arrow">▶</span> 狛乃ひなた
+    </div>
+    <div class="script-list open">
+      <div class="script-item" onclick="showScript('komano-1')">Shorts #1 自己紹介</div>
+      <div class="script-item" onclick="showScript('komano-3')">Shorts #3 メリデメ</div>
+    </div>
+  </div>
+
+  <div class="client-group" data-client="baran">
+    <div class="client-name" onclick="toggleClient(this)">
+      <span class="arrow">▶</span> 白苺のばらん
+    </div>
+    <div class="script-list">
+      <div class="script-item" onclick="showScript('baran-4')">Shorts #4 推しバレ</div>
+      <div class="script-item" onclick="showScript('baran-5')">Shorts #5 バイト</div>
+      <div class="script-item" onclick="showScript('baran-6')">Shorts #6 検索履歴</div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="welcome" id="welcome">
+    <h2>台本ポータル</h2>
+    <p>左のサイドバーからクライアント・台本を選んでください</p>
+  </div>
+
+  <!-- ===== 狛乃 #1 ===== -->
+  <div class="script-view" id="komano-1">
+    <div class="script-header">
+      <div class="client-tag">狛乃ひなた</div>
+      <h1>Shorts #1「100いいね企画×自己紹介」</h1>
+      <div class="desc">「グループやめた」のフックで止めて、声と人柄で印象を残す自己紹介Shorts</div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(this, 'komano-1-visual')">ビジュアル</div>
+      <div class="tab" onclick="switchTab(this, 'komano-1-vrew')">Vrew用コピー</div>
+    </div>
+    <div class="tab-content active" id="komano-1-visual">
+      <div class="section hook"><div class="section-header">フック <span class="time">0:00〜0:03</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（勢いよく、宣言）</span><span class="serif">100いいね行ったら、顔公開します。</span></div>
+        </div>
+      </div>
+      <div class="section main-section"><div class="section-header">自己紹介 <span class="time">0:03〜0:12</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（少しトーン落として）</span><span class="serif">狛乃ひなたです。元歌い手グループにいたんですけど、ソロでもう一回やりたくなっちゃって。</span></div>
+          <div class="line"><span class="direction">（ツッコミ先回り）</span><span class="serif">またこういう系かよ　飽きた</span></div>
+          <div class="line"><span class="direction">（まっすぐに）</span><span class="serif">気持ちはわかる！でも</span></div>
+        </div>
+      </div>
+      <div class="section cta-section"><div class="section-header">CTA <span class="time">0:12〜0:20</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（明るく、期待させるように）</span><span class="serif">次のShortsではグループをやめてヤバい理由話すかも</span></div>
+          <div class="line"><span class="serif">チャンネル登録してまた会う準備しといて！</span></div>
+        </div>
+      </div>
+      <div class="titles"><h3>タイトル候補</h3>
+        <div class="title-option"><span class="title-num">①</span>100いいねで顔公開します #歌い手</div>
+        <div class="title-option"><span class="title-num">②</span>元歌い手グループ出身がソロで再スタート</div>
+        <div class="title-option"><span class="title-num">③</span>この声、覚えてくれたら100いいねで会えます</div>
+      </div>
+    </div>
+    <div class="tab-content" id="komano-1-vrew">
+      <div class="vrew-box"><h3>Vrew用（鉤括弧なし・セリフのみ）</h3>
+        <div class="vrew-text" id="komano-1-vrew-text">100いいね行ったら
+顔公開します
+狛乃ひなたです
+元歌い手グループにいたんですけど
+ソロでもう一回やりたくなっちゃって
+またこういう系かよ
+飽きた
+気持ちはわかる！
+でも
+次のShortsでは
+グループをやめてヤバい理由話すかも
+チャンネル登録して
+また会う準備しといて！</div>
+        <button class="copy-btn" onclick="copyVrew(this, 'komano-1-vrew-text')">コピー</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 狛乃 #3 メリデメ ===== -->
+  <div class="script-view" id="komano-3">
+    <div class="script-header">
+      <div class="client-tag">狛乃ひなた</div>
+      <h1>Shorts #3「歌い手と付き合うメリット」</h1>
+      <div class="desc">Xで流行ってる「付き合うメリット/デメリット」を歌い手版に変換。ニヒルな温度感で高速読み上げ → デメリットはコメント欄誘導</div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(this, 'komano-3-visual')">ビジュアル</div>
+      <div class="tab" onclick="switchTab(this, 'komano-3-vrew')">Vrew用コピー</div>
+    </div>
+    <div class="tab-content active" id="komano-3-visual">
+      <div class="section hook"><div class="section-header">フック <span class="time">0:00〜0:02</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">※タイトルラベル：「歌い手と付き合うメリット」をドンと表示</span></div>
+          <div class="line"><span class="direction">（テンポよく）</span><span class="serif">歌い手と付き合うメリットデメリット</span></div>
+        </div>
+      </div>
+      <div class="section main-section"><div class="section-header">メリット高速読み上げ <span class="time">0:02〜0:16</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（テンポ上げて、1個ずつポンポン出す）</span></div>
+          <div class="line"><span class="serif">引きこもりだから肌が白い</span></div>
+          <div class="line"><span class="serif">エナドリに詳しい</span></div>
+          <div class="line"><span class="serif">好きな曲リクエストしたら歌ってくれる</span></div>
+          <div class="line"><span class="serif">夜型だから深夜の電話付き合える</span></div>
+          <div class="line"><span class="serif">防音室あるから叫んでもOK</span></div>
+          <div class="line"><span class="serif">カラオケで一生歌ってくれるから休める</span></div>
+          <div class="line"><span class="serif">声がいいから電話で寝落ちできる</span></div>
+          <div class="line"><span class="direction">（ドヤ顔で）</span><span class="serif">喉のケアに詳しいから風邪の時めっちゃ頼れる</span></div>
+          <div class="line"><span class="direction">（急に真顔で）</span><span class="serif"><span class="self-tsukkomi">…でも推しの歌い手は狛乃になります</span></span></div>
+        </div>
+      </div>
+      <div class="section cta-section"><div class="section-header">コメント誘導＋CTA <span class="time">0:16〜0:23</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（急にトーン落として、ニヤッと）</span><span class="serif">デメリットはコメント欄で！</span></div>
+          <div class="line"><span class="direction">（元気に戻して）</span><span class="serif">歌い手と付き合ったことある人はコメントで教えて！</span></div>
+          <div class="line"><span class="serif">高評価しとくとまた狛乃に会えるよ</span></div>
+        </div>
+      </div>
+      <div class="section comment-section"><div class="section-header">固定コメント <span class="pin-badge">📌 固定</span></div>
+        <div class="section-body">
+          <div class="comment-preview"><span class="name">狛乃ひなた⚾️🐾</span>歌い手と付き合うデメリット
+
+・肌が白いけど外デート全部断られる
+・エナドリ詳しいけど毎月のエナドリ代がえぐい
+・好きな曲歌ってくれるけどリクエストしてない曲も永遠に歌ってくる
+・深夜の電話は付き合えるけど朝は絶対起きない
+・防音室あるけど防音室から出てこない
+・カラオケで歌ってくれるけどマイク一生返ってこない
+・電話で寝落ちできるけど先に寝たら怒る
+・喉のケア詳しいけどデートで冷たいもの一緒に食べてくれない
+
+当てはまる人いる？笑</div>
+          <button class="copy-btn" style="margin-top: 12px;" onclick="copyComment(this)">固定コメントをコピー</button>
+        </div>
+      </div>
+      <div class="titles"><h3>タイトル候補</h3>
+        <div class="title-option"><span class="title-num">①</span>Xで流行ってるやつを歌い手がやってみた結果</div>
+        <div class="title-option"><span class="title-num">②</span>歌い手と付き合うメリットが良すぎる件 #歌い手</div>
+        <div class="title-option"><span class="title-num">③</span>歌い手の彼氏ってこういうことです</div>
+      </div>
+    </div>
+    <div class="tab-content" id="komano-3-vrew">
+      <div class="vrew-box"><h3>Vrew用（鉤括弧なし・セリフのみ）</h3>
+        <div class="vrew-text" id="komano-3-vrew-text">歌い手と付き合う
+メリットデメリット
+引きこもりだから肌が白い
+エナドリに詳しい
+好きな曲リクエストしたら
+歌ってくれる
+夜型だから
+深夜の電話付き合える
+防音室あるから叫んでもOK
+カラオケで一生歌ってくれるから
+休める
+声がいいから
+電話で寝落ちできる
+喉のケアに詳しいから
+風邪の時めっちゃ頼れる
+でも推しの歌い手は
+狛乃になります
+デメリットはコメント欄で！
+歌い手と付き合ったことある人は
+コメントで教えて！
+高評価しとくと
+また狛乃に会えるよ</div>
+        <button class="copy-btn" onclick="copyVrew(this, 'komano-3-vrew-text')">コピー</button>
+      </div>
+      <div class="vrew-box"><h3>固定コメント用</h3>
+        <div class="vrew-text" id="komano-3-comment-text">歌い手と付き合うデメリット
+
+・肌が白いけど外デート全部断られる
+・エナドリ詳しいけど毎月のエナドリ代がえぐい
+・好きな曲歌ってくれるけどリクエストしてない曲も永遠に歌ってくる
+・深夜の電話は付き合えるけど朝は絶対起きない
+・防音室あるけど防音室から出てこない
+・カラオケで歌ってくれるけどマイク一生返ってこない
+・電話で寝落ちできるけど先に寝たら怒る
+・喉のケア詳しいけどデートで冷たいもの一緒に食べてくれない
+
+当てはまる人いる？笑</div>
+        <button class="copy-btn" onclick="copyVrew(this, 'komano-3-comment-text')">コピー</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ばらん #4 ===== -->
+  <div class="script-view" id="baran-4">
+    <div class="script-header">
+      <div class="client-tag">白苺のばらん</div>
+      <h1>Shorts #4「元アイドルなのに推しがバレた」</h1>
+      <div class="desc">アイドルも裏では推し活してるというギャップに共感する、VTuber・アイドル好きの10〜20代向け</div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(this, 'baran-4-visual')">ビジュアル</div>
+      <div class="tab" onclick="switchTab(this, 'baran-4-vrew')">Vrew用コピー</div>
+    </div>
+    <div class="tab-content active" id="baran-4-visual">
+      <div class="section hook"><div class="section-header">フック <span class="time">0:00〜0:03</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（慌てて隠す動き）</span><span class="serif">……見た？　今の見てないよね？</span></div>
+        </div>
+      </div>
+      <div class="section main-section"><div class="section-header">暴露 <span class="time">0:03〜0:08</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（恥ずかしそうだけど嬉しそう）</span><span class="serif">元アイドルなのにさ……ステージ裏でずっとこれ眺めてたの、内緒ね？</span></div>
+        </div>
+      </div>
+      <div class="section main-section"><div class="section-header">共感+お金ない <span class="time">0:08〜0:13</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（笑いながらも本気のトーン）</span><span class="serif">デビュー費用で貯金溶けたけど……推しグッズだけは絶対売らなかった</span></div>
+        </div>
+      </div>
+      <div class="section cta-section"><div class="section-header">引き→CTA <span class="time">0:13〜0:17</span></div>
+        <div class="section-body">
+          <div class="line"><span class="serif">だから今度は私が、君の"推し"になりたい。高評価してくれたら、またここで会えるから</span></div>
+        </div>
+      </div>
+      <div class="section hook"><div class="section-header">ループ <span class="time">0:17〜0:20</span></div>
+        <div class="section-body">
+          <div class="line"><span class="serif">……ってまだ早いか。ね、今の忘れて？</span></div>
+        </div>
+      </div>
+      <div class="titles"><h3>タイトル候補</h3>
+        <div class="title-option"><span class="title-num">①</span>元アイドルの"推し"がバレた瞬間 #VTuber</div>
+        <div class="title-option"><span class="title-num">②</span>ステージ裏で推し活してた元アイドルの告白</div>
+        <div class="title-option"><span class="title-num">③</span>貯金ゼロでも推しグッズは売らない元アイドル</div>
+      </div>
+    </div>
+    <div class="tab-content" id="baran-4-vrew">
+      <div class="vrew-box"><h3>Vrew用（鉤括弧なし・セリフのみ）</h3>
+        <div class="vrew-text" id="baran-4-vrew-text">見た？
+今の見てないよね？
+元アイドルなのにさ
+ステージ裏でずっとこれ眺めてたの
+内緒ね？
+デビュー費用で貯金溶けたけど
+推しグッズだけは絶対売らなかった
+だから今度は私が
+君の推しになりたい
+高評価してくれたら
+またここで会えるから
+ってまだ早いか
+ね、今の忘れて？</div>
+        <button class="copy-btn" onclick="copyVrew(this, 'baran-4-vrew-text')">コピー</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ばらん #5 ===== -->
+  <div class="script-view" id="baran-5">
+    <div class="script-header">
+      <div class="client-tag">白苺のばらん</div>
+      <h1>Shorts #5「元アイドル、1日9時間バイトしてます」</h1>
+      <div class="desc">夢のために泥臭く頑張ってる人を応援したくなる、10〜20代のVTuber・アイドルファン向け</div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(this, 'baran-5-visual')">ビジュアル</div>
+      <div class="tab" onclick="switchTab(this, 'baran-5-vrew')">Vrew用コピー</div>
+    </div>
+    <div class="tab-content active" id="baran-5-visual">
+      <div class="section hook"><div class="section-header">フック <span class="time">0:00〜0:03</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（疲労感のある声）</span><span class="serif">1日9時間働いてるアイドル、見たことある？</span></div>
+        </div>
+      </div>
+      <div class="section main-section"><div class="section-header">現実 <span class="time">0:03〜0:08</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（呆れつつも笑って）</span><span class="serif">元アイドルなのに今はひたすらバイト。VTuberデビューするのにお金がいるってさ……聞いてないんだけど</span></div>
+        </div>
+      </div>
+      <div class="section main-section"><div class="section-header">本音 <span class="time">0:08〜0:13</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（本当に楽しそうに）</span><span class="serif">でもバイト終わりに準備してる時間だけは、アイドルの時よりワクワクしてる</span></div>
+        </div>
+      </div>
+      <div class="section cta-section"><div class="section-header">引き→CTA <span class="time">0:13〜0:17</span></div>
+        <div class="section-body">
+          <div class="line"><span class="serif">あと少しで会えるから。高評価してくれたら、またShortsで届くからね</span></div>
+        </div>
+      </div>
+      <div class="section hook"><div class="section-header">ループ <span class="time">0:17〜0:20</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（前向きな声）</span><span class="serif">……さ、明日もバイト行ってきます</span></div>
+        </div>
+      </div>
+      <div class="titles"><h3>タイトル候補</h3>
+        <div class="title-option"><span class="title-num">①</span>元アイドル、今は1日9時間バイトしてます</div>
+        <div class="title-option"><span class="title-num">②</span>VTuberデビューのために1日9時間働く元アイドル</div>
+        <div class="title-option"><span class="title-num">③</span>夢のために9時間バイトする元アイドルの本音</div>
+      </div>
+    </div>
+    <div class="tab-content" id="baran-5-vrew">
+      <div class="vrew-box"><h3>Vrew用（鉤括弧なし・セリフのみ）</h3>
+        <div class="vrew-text" id="baran-5-vrew-text">1日9時間働いてるアイドル
+見たことある？
+元アイドルなのに
+今はひたすらバイト
+VTuberデビューするのに
+お金がいるってさ
+聞いてないんだけど
+でもバイト終わりに
+準備してる時間だけは
+アイドルの時よりワクワクしてる
+あと少しで会えるから
+高評価してくれたら
+またShortsで届くからね
+さ、明日もバイト行ってきます</div>
+        <button class="copy-btn" onclick="copyVrew(this, 'baran-5-vrew-text')">コピー</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ばらん #6 ===== -->
+  <div class="script-view" id="baran-6">
+    <div class="script-header">
+      <div class="client-tag">白苺のばらん</div>
+      <h1>Shorts #6「元アイドルのスマホの検索履歴がヤバい」</h1>
+      <div class="desc">VTuberに興味があって「どうやってなるんだろう」と思ったことがある人、夢に向かって独学で頑張ってる人向け</div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(this, 'baran-6-visual')">ビジュアル</div>
+      <div class="tab" onclick="switchTab(this, 'baran-6-vrew')">Vrew用コピー</div>
+    </div>
+    <div class="tab-content active" id="baran-6-visual">
+      <div class="section hook"><div class="section-header">フック <span class="time">0:00〜0:03</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（「見ないで」で逆に見たくなる心理）</span><span class="serif">私の検索履歴、絶対見ないで</span></div>
+        </div>
+      </div>
+      <div class="section main-section"><div class="section-header">暴露 <span class="time">0:03〜0:08</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（恥ずかしそうに1つずつ読み上げ）</span><span class="serif">"VTuber なり方"……"立ち絵 相場"……"配信ソフト 無料"……全部ゼロからです</span></div>
+        </div>
+      </div>
+      <div class="section main-section"><div class="section-header">本音 <span class="time">0:08〜0:13</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（笑いつつもちょっと悔しそう）</span><span class="serif">ステージには何百回も立ったのに……配信の始め方すら知らなかった</span></div>
+        </div>
+      </div>
+      <div class="section cta-section"><div class="section-header">前向き→CTA <span class="time">0:13〜0:17</span></div>
+        <div class="section-body">
+          <div class="line"><span class="direction">（声を明るく）</span><span class="serif">でも毎日調べてたら、ちょっとずつ夢に近づいてる気がする。高評価してくれたら、またここに届くから一緒に見届けて</span></div>
+        </div>
+      </div>
+      <div class="section hook"><div class="section-header">ループ <span class="time">0:17〜0:20</span></div>
+        <div class="section-body">
+          <div class="line"><span class="serif">……ってまた増えてる。ほんとに見ないでね？</span></div>
+        </div>
+      </div>
+      <div class="titles"><h3>タイトル候補</h3>
+        <div class="title-option"><span class="title-num">①</span>元アイドルの検索履歴がVTuberだらけだった</div>
+        <div class="title-option"><span class="title-num">②</span>元アイドルのスマホの中身がヤバすぎた</div>
+        <div class="title-option"><span class="title-num">③</span>全部独学。元アイドルのVTuberへの道</div>
+      </div>
+    </div>
+    <div class="tab-content" id="baran-6-vrew">
+      <div class="vrew-box"><h3>Vrew用（鉤括弧なし・セリフのみ）</h3>
+        <div class="vrew-text" id="baran-6-vrew-text">私の検索履歴
+絶対見ないで
+VTuber なり方
+立ち絵 相場
+配信ソフト 無料
+全部ゼロからです
+ステージには何百回も立ったのに
+配信の始め方すら知らなかった
+でも毎日調べてたら
+ちょっとずつ夢に近づいてる気がする
+高評価してくれたら
+またここに届くから
+一緒に見届けて
+ってまた増えてる
+ほんとに見ないでね？</div>
+        <button class="copy-btn" onclick="copyVrew(this, 'baran-6-vrew-text')">コピー</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// client filter
+const params = new URLSearchParams(window.location.search);
+const clientFilter = params.get('client');
+if (clientFilter) {
+  document.querySelectorAll('.client-group').forEach(g => {
+    if (!g.dataset.client || g.dataset.client !== clientFilter) {
+      g.style.display = 'none';
+    } else {
+      g.querySelector('.client-name').classList.add('open');
+      g.querySelector('.script-list').classList.add('open');
+    }
+  });
+  // hide sidebar title or adjust
+  document.querySelector('.sidebar-title').textContent = '台本一覧';
+}
+
+function toggleClient(el) {
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('open');
+}
+
+function showScript(id) {
+  document.getElementById('welcome').style.display = 'none';
+  document.querySelectorAll('.script-view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.script-item').forEach(i => i.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function switchTab(tabEl, contentId) {
+  const container = tabEl.closest('.script-view');
+  container.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  tabEl.classList.add('active');
+  document.getElementById(contentId).classList.add('active');
+}
+
+function copyVrew(btn, textId) {
+  const text = document.getElementById(textId).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'コピーしました！';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function copyComment(btn) {
+  const preview = btn.closest('.section-body').querySelector('.comment-preview');
+  const text = preview.textContent.replace(preview.querySelector('.name').textContent, '').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'コピーしました！';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '固定コメントをコピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>
