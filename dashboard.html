@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Studio ダッシュボード</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0f172a;font-family:'Noto Sans JP',sans-serif;color:#e2e8f0}
+
+  /* nav */
+  .nav{position:fixed;top:0;left:0;right:0;height:52px;background:#1e293b;border-bottom:1px solid #334155;display:flex;align-items:center;padding:0 24px;z-index:100;gap:8px}
+  .nav-title{font-size:15px;font-weight:900;color:#fff;margin-right:24px}
+  .nav-tab{padding:8px 16px;font-size:13px;font-weight:700;color:#94a3b8;cursor:pointer;border-radius:8px;transition:all .15s}
+  .nav-tab:hover{color:#fff;background:#334155}
+  .nav-tab.active{color:#fff;background:#8b5cf6}
+  .nav-right{margin-left:auto;font-size:11px;color:#64748b}
+
+  body{padding-top:52px}
+  .page{display:none;padding:24px;max-width:1100px;margin:0 auto}
+  .page.active{display:block}
+
+  h2{font-size:20px;font-weight:900;margin-bottom:16px;color:#fff}
+  h3{font-size:14px;font-weight:700;color:#94a3b8;letter-spacing:1px;margin-bottom:10px}
+
+  .card{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:20px;margin-bottom:16px}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .card-title{font-size:15px;font-weight:900;color:#fff}
+  .badge{padding:3px 10px;border-radius:8px;font-size:11px;font-weight:700}
+  .badge-purple{background:#7c3aed;color:#fff}
+  .badge-green{background:#16a34a;color:#fff}
+  .badge-yellow{background:#eab308;color:#1e293b}
+  .badge-red{background:#dc2626;color:#fff}
+  .badge-blue{background:#2563eb;color:#fff}
+
+  /* schedule */
+  .schedule-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #334155}
+  .schedule-item:last-child{border-bottom:none}
+  .schedule-time{font-size:13px;font-weight:700;color:#8b5cf6;width:50px;flex-shrink:0}
+  .schedule-label{font-size:14px;flex:1}
+  .schedule-type{font-size:11px;padding:2px 8px;border-radius:6px}
+  .type-routine{background:#334155;color:#94a3b8}
+  .type-sns{background:#7c3aed33;color:#c084fc}
+  .type-editing{background:#2563eb33;color:#60a5fa}
+  .type-deadline{background:#dc262633;color:#f87171}
+  .type-shorts{background:#16a34a33;color:#4ade80}
+
+  /* deadline */
+  .deadline-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #334155}
+  .deadline-row:last-child{border-bottom:none}
+  .deadline-date{font-size:13px;font-weight:700;width:80px;flex-shrink:0}
+  .deadline-client{font-size:12px;padding:2px 8px;border-radius:6px;background:#334155;color:#94a3b8}
+  .deadline-title{font-size:14px;flex:1}
+  .days-left{font-size:12px;font-weight:700}
+  .days-danger{color:#f87171}
+  .days-warning{color:#fbbf24}
+  .days-safe{color:#4ade80}
+
+  .empty-state{color:#64748b;font-size:13px;padding:20px;text-align:center}
+
+  /* tweets */
+  .tweet-tabs{display:flex;gap:4px;margin-bottom:16px;background:#0f172a;border-radius:10px;padding:3px}
+  .tweet-tab{flex:1;text-align:center;padding:8px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;color:#64748b;transition:all .15s}
+  .tweet-tab.active{background:#1e293b;color:#c084fc}
+  .tweet-tab:hover:not(.active){color:#e2e8f0}
+
+  .tweet-account{display:none}
+  .tweet-account.active{display:block}
+
+  .tweet-card{background:#0f172a;border:1px solid #334155;border-radius:14px;padding:14px 18px;margin-bottom:10px}
+  .tweet-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .tweet-date{font-size:12px;color:#64748b;font-weight:700}
+  .tweet-slot{font-size:11px;padding:2px 6px;border-radius:5px;background:#334155;color:#94a3b8}
+  .tweet-status{font-size:11px;padding:2px 6px;border-radius:5px}
+  .status-scheduled{background:#7c3aed33;color:#c084fc}
+  .status-posted{background:#16a34a33;color:#4ade80}
+  .tweet-body{font-size:13px;line-height:1.7;white-space:pre-wrap;color:#cbd5e1}
+  .tweet-note{font-size:11px;color:#f472b6;margin-top:6px}
+  .tweet-copy{margin-top:8px;background:#334155;color:#e2e8f0;border:none;padding:6px 14px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+  .tweet-copy:hover{background:#475569}
+  .tweet-copy.copied{background:#16a34a;color:#fff}
+
+  /* kpi */
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .kpi-card{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:20px}
+  .kpi-name{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .kpi-number{font-size:32px;font-weight:900;color:#8b5cf6}
+  .kpi-label{font-size:11px;color:#64748b;margin-top:2px}
+  .kpi-history{margin-top:12px;font-size:12px;color:#64748b}
+
+  /* share */
+  .share-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #334155}
+  .share-row:last-child{border-bottom:none}
+  .share-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;background:#334155}
+  .share-name{font-size:14px;font-weight:700;flex:1}
+  .share-btn{background:#8b5cf6;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+  .share-btn:hover{background:#7c3aed}
+  .share-btn.copied{background:#16a34a}
+
+  /* scripts link */
+  .script-link{display:block;padding:10px 0;border-bottom:1px solid #334155;color:#c084fc;text-decoration:none;font-size:14px;font-weight:700}
+  .script-link:hover{color:#e2e8f0}
+  .script-link:last-child{border-bottom:none}
+  .script-client{font-size:12px;color:#64748b;font-weight:400;margin-left:8px}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-title">AI Studio</div>
+  <div class="nav-tab active" onclick="showPage('dashboard')">ダッシュボード</div>
+  <div class="nav-tab" onclick="showPage('tweets')">ツイート管理</div>
+  <div class="nav-tab" onclick="showPage('scripts-page')">台本</div>
+  <div class="nav-tab" onclick="showPage('deadlines')">納期管理</div>
+  <div class="nav-tab" onclick="showPage('kpi')">KPI</div>
+  <div class="nav-tab" onclick="showPage('share')">共有</div>
+  <div class="nav-right" id="last-updated"></div>
+</div>
+
+<!-- ===== ダッシュボード ===== -->
+<div class="page active" id="dashboard">
+  <h2>ダッシュボード</h2>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title" id="today-label">今日のスケジュール</div>
+    </div>
+    <div id="today-schedule"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">直近の納期</div>
+    </div>
+    <div id="upcoming-deadlines"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">今日の投稿予定</div>
+    </div>
+    <div id="today-tweets"></div>
+  </div>
+</div>
+
+<!-- ===== ツイート管理 ===== -->
+<div class="page" id="tweets">
+  <h2>ツイート管理</h2>
+  <div class="tweet-tabs" id="tweet-tabs"></div>
+  <div id="tweet-accounts"></div>
+</div>
+
+<!-- ===== 台本 ===== -->
+<div class="page" id="scripts-page">
+  <h2>台本管理</h2>
+  <div class="card">
+    <div id="script-links"></div>
+  </div>
+</div>
+
+<!-- ===== 納期管理 ===== -->
+<div class="page" id="deadlines">
+  <h2>納期管理</h2>
+  <div class="card">
+    <div id="all-deadlines"></div>
+  </div>
+</div>
+
+<!-- ===== KPI ===== -->
+<div class="page" id="kpi">
+  <h2>KPI</h2>
+  <div class="kpi-grid" id="kpi-grid"></div>
+</div>
+
+<!-- ===== 共有 ===== -->
+<div class="page" id="share">
+  <h2>クライアントに共有</h2>
+  <div class="card">
+    <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">クライアント専用URLをコピーして共有できます（台本のみ表示）</p>
+    <div class="share-row">
+      <div class="share-icon">🐾</div>
+      <div class="share-name">狛乃ひなた</div>
+      <button class="share-btn" onclick="shareURL('komano',this)">URLをコピー</button>
+    </div>
+    <div class="share-row">
+      <div class="share-icon">🍓</div>
+      <div class="share-name">白苺のばらん</div>
+      <button class="share-btn" onclick="shareURL('baran',this)">URLをコピー</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let DATA = {};
+
+async function loadData() {
+  try {
+    const res = await fetch('data.json?t=' + Date.now());
+    DATA = await res.json();
+    render();
+  } catch(e) {
+    console.error('data.json load failed', e);
+  }
+}
+
+function render() {
+  renderSchedule();
+  renderDeadlines();
+  renderTweets();
+  renderTodayTweets();
+  renderKPI();
+  renderScripts();
+  if (DATA.lastUpdated) {
+    const d = new Date(DATA.lastUpdated);
+    document.getElementById('last-updated').textContent = '最終更新: ' + d.toLocaleString('ja-JP');
+  }
+}
+
+function renderSchedule() {
+  const today = new Date().toISOString().split('T')[0];
+  const days = ['日','月','火','水','木','金','土'];
+  const d = new Date(today);
+  document.getElementById('today-label').textContent = `${d.getMonth()+1}/${d.getDate()}（${days[d.getDay()]}）のスケジュール`;
+
+  const sched = DATA.schedule?.[today];
+  const el = document.getElementById('today-schedule');
+  if (!sched || !sched.items.length) {
+    el.innerHTML = '<div class="empty-state">スケジュールが登録されていません</div>';
+    return;
+  }
+  el.innerHTML = sched.items.map(i => `
+    <div class="schedule-item">
+      <div class="schedule-time">${i.time}</div>
+      <div class="schedule-label">${i.label}</div>
+      <span class="schedule-type type-${i.type}">${i.type}</span>
+    </div>
+  `).join('');
+}
+
+function renderDeadlines() {
+  const today = new Date();
+  const deadlines = (DATA.deadlines || [])
+    .map(d => ({...d, daysLeft: Math.ceil((new Date(d.date) - today) / 86400000)}))
+    .filter(d => d.daysLeft >= 0)
+    .sort((a,b) => a.daysLeft - b.daysLeft)
+    .slice(0, 5);
+
+  const el = document.getElementById('upcoming-deadlines');
+  const allEl = document.getElementById('all-deadlines');
+
+  if (!deadlines.length) {
+    const empty = '<div class="empty-state">登録中の納期はありません</div>';
+    el.innerHTML = empty;
+    allEl.innerHTML = empty;
+    return;
+  }
+
+  const html = deadlines.map(d => {
+    const cls = d.daysLeft <= 1 ? 'days-danger' : d.daysLeft <= 3 ? 'days-warning' : 'days-safe';
+    return `<div class="deadline-row">
+      <div class="deadline-date ${cls}">${d.date.slice(5)}</div>
+      <span class="deadline-client">${d.client}</span>
+      <div class="deadline-title">${d.title}</div>
+      <div class="days-left ${cls}">${d.daysLeft === 0 ? '今日' : d.daysLeft + '日後'}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML = html;
+
+  // all deadlines page
+  const allDeadlines = (DATA.deadlines || [])
+    .map(d => ({...d, daysLeft: Math.ceil((new Date(d.date) - today) / 86400000)}))
+    .sort((a,b) => a.daysLeft - b.daysLeft);
+  allEl.innerHTML = allDeadlines.map(d => {
+    const cls = d.daysLeft <= 1 ? 'days-danger' : d.daysLeft <= 3 ? 'days-warning' : 'days-safe';
+    return `<div class="deadline-row">
+      <div class="deadline-date ${cls}">${d.date.slice(5)}</div>
+      <span class="deadline-client">${d.client}</span>
+      <div class="deadline-title">${d.title}</div>
+      <div class="days-left ${cls}">${d.daysLeft === 0 ? '今日' : d.daysLeft < 0 ? '完了' : d.daysLeft + '日後'}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTweets() {
+  const tabsEl = document.getElementById('tweet-tabs');
+  const accountsEl = document.getElementById('tweet-accounts');
+  const accounts = DATA.tweets || {};
+  let tabsHtml = '';
+  let contentHtml = '';
+  let first = true;
+
+  for (const [key, acc] of Object.entries(accounts)) {
+    tabsHtml += `<div class="tweet-tab ${first?'active':''}" onclick="switchTweetTab('${key}')">${acc.icon} ${acc.name}</div>`;
+    contentHtml += `<div class="tweet-account ${first?'active':''}" id="tweet-${key}">`;
+    for (const [weekKey, week] of Object.entries(acc.weeks || {})) {
+      contentHtml += `<h3>${week.label}</h3>`;
+      for (const post of week.posts) {
+        const statusCls = post.status === 'posted' ? 'status-posted' : 'status-scheduled';
+        const statusLabel = post.status === 'posted' ? '投稿済み' : '予約';
+        contentHtml += `
+          <div class="tweet-card">
+            <div class="tweet-meta">
+              <span class="tweet-date">${post.date.slice(5)} (${post.day})</span>
+              <span class="tweet-slot">${post.slot}</span>
+              <span class="tweet-status ${statusCls}">${statusLabel}</span>
+            </div>
+            <div class="tweet-body">${post.content}</div>
+            ${post.note ? `<div class="tweet-note">${post.note}</div>` : ''}
+            <button class="tweet-copy" onclick="copyTweet(this)">コピー</button>
+          </div>`;
+      }
+    }
+    contentHtml += '</div>';
+    first = false;
+  }
+  tabsEl.innerHTML = tabsHtml;
+  accountsEl.innerHTML = contentHtml;
+}
+
+function renderTodayTweets() {
+  const today = new Date().toISOString().split('T')[0];
+  const el = document.getElementById('today-tweets');
+  const accounts = DATA.tweets || {};
+  let html = '';
+  let count = 0;
+
+  for (const [key, acc] of Object.entries(accounts)) {
+    for (const week of Object.values(acc.weeks || {})) {
+      for (const post of week.posts) {
+        if (post.date === today) {
+          count++;
+          html += `<div class="schedule-item">
+            <div class="schedule-time">${post.time}</div>
+            <div class="schedule-label">${acc.icon} ${acc.name}：${post.slot}</div>
+            <span class="schedule-type type-sns">ツイート</span>
+          </div>`;
+        }
+      }
+    }
+  }
+  el.innerHTML = count ? html : '<div class="empty-state">今日の投稿予定はありません</div>';
+}
+
+function renderKPI() {
+  const el = document.getElementById('kpi-grid');
+  const kpis = DATA.kpi || {};
+  let html = '';
+  for (const [key, acc] of Object.entries(kpis)) {
+    const latest = acc.records?.[acc.records.length - 1];
+    html += `<div class="kpi-card">
+      <div class="kpi-name">${DATA.tweets?.[key]?.icon || ''} ${acc.name}</div>
+      <div class="kpi-number">${latest?.followers ?? '-'}</div>
+      <div class="kpi-label">フォロワー数</div>
+      ${latest?.note ? `<div class="kpi-history">${latest.note}</div>` : ''}
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderScripts() {
+  const el = document.getElementById('script-links');
+  const scripts = DATA.scripts || {};
+  let html = '';
+  for (const [key, client] of Object.entries(scripts)) {
+    for (const item of client.items) {
+      html += `<a class="script-link" href="index.html" onclick="event.preventDefault();showScriptInPortal('${item.id}')">${item.title}<span class="script-client">${client.name}</span></a>`;
+    }
+  }
+  el.innerHTML = html || '<div class="empty-state">台本がありません</div>';
+}
+
+// navigation
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function switchTweetTab(key) {
+  document.querySelectorAll('.tweet-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tweet-account').forEach(a => a.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tweet-' + key).classList.add('active');
+}
+
+function showScriptInPortal(id) {
+  window.open('index.html#' + id, '_blank');
+}
+
+function copyTweet(btn) {
+  const body = btn.previousElementSibling?.previousElementSibling || btn.closest('.tweet-card').querySelector('.tweet-body');
+  const text = btn.closest('.tweet-card').querySelector('.tweet-body').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'コピーしました！';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function shareURL(client, btn) {
+  const base = window.location.href.replace('dashboard.html', 'index.html');
+  navigator.clipboard.writeText(base + '?client=' + client).then(() => {
+    btn.textContent = 'コピーしました！';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'URLをコピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+loadData();
+</script>
+</body>
+</html>
